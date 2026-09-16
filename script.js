@@ -360,6 +360,7 @@ const db = {
 
 // Stan aplikacji
 let selectedModule = 'translate';      // 'translate' lub 'gap'
+let gapHintMode = 'with';              // 'with' lub 'without'
 let selectedQuestionCount = 10;        // 10, 20, 30, 40, 50
 let currentTopic = '';                 // 'tobe', 'tohave', 'can', 'mix'
 let currentQuestions = [];
@@ -389,9 +390,11 @@ const finalScoreText = document.getElementById('final-score-text');
 const continueBtn = document.getElementById('continue-btn');
 const retryBtn = document.getElementById('retry-btn');
 
-// Przełączniki modułów i selektor liczby zadań
+// Przełączniki modułów, wariantu podpowiedzi i selektor liczby zadań
 const modTranslate = document.getElementById('mod-translate');
 const modGap = document.getElementById('mod-gap');
+const hintOptionBlock = document.getElementById('hint-option-block');
+const hintButtons = document.querySelectorAll('.hint-btn');
 const countButtons = document.querySelectorAll('.count-btn');
 const topicButtons = document.querySelectorAll('.topic-btn');
 
@@ -407,11 +410,22 @@ function setModule(mode) {
     if (mode === 'translate') {
         modTranslate.classList.add('active');
         modGap.classList.remove('active');
+        hintOptionBlock.classList.add('hidden');
     } else {
         modGap.classList.add('active');
         modTranslate.classList.remove('active');
+        hintOptionBlock.classList.remove('hidden');
     }
 }
+
+// Obsługa wyboru podpowiedzi (z podpowiedziami / bez podpowiedzi)
+hintButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        hintButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        gapHintMode = btn.dataset.hint; // 'with' lub 'without'
+    });
+});
 
 // Obsługa wyboru liczby pytań (Krok 2)
 countButtons.forEach(btn => {
@@ -449,7 +463,9 @@ function startQuiz(topic) {
     if (selectedModule === 'translate') {
         currentModuleBadge.textContent = '📝 Tłumaczenia zdań';
     } else {
-        currentModuleBadge.textContent = '🧩 Zadania z luką';
+        currentModuleBadge.textContent = gapHintMode === 'with' 
+            ? '🧩 Zadania z luką (z podpowiedziami)' 
+            : '🧩 Zadania z luką (bez podpowiedzi)';
     }
 
     // Ustawienie tytułu tematu
@@ -583,10 +599,43 @@ function renderQuestions() {
             inputArea.appendChild(input);
             
             if (q.suffix) {
+                // Rozdzielamy tekst zdania od podpowiedzi w nawiasie (...)
+                const match = q.suffix.match(/^(.*?)(\s*\([^)]+\))\s*$/);
+                let mainText = q.suffix;
+                let hintText = "";
+                
+                if (match) {
+                    mainText = match[1];
+                    hintText = match[2].trim();
+                }
+                
                 const suffix = document.createElement('span');
                 suffix.className = 'gap-text';
-                suffix.textContent = q.suffix;
+                suffix.textContent = mainText;
                 inputArea.appendChild(suffix);
+                
+                if (hintText) {
+                    if (gapHintMode === 'with') {
+                        const hintSpan = document.createElement('span');
+                        hintSpan.className = 'hint-pill';
+                        hintSpan.textContent = ` ${hintText}`;
+                        inputArea.appendChild(hintSpan);
+                    } else {
+                        // Tryb bez podpowiedzi - dyskretny przycisk ratunkowy
+                        const revealBtn = document.createElement('button');
+                        revealBtn.type = 'button';
+                        revealBtn.className = 'reveal-hint-btn';
+                        revealBtn.textContent = '💡 Podpowiedź';
+                        revealBtn.title = 'Kliknij jeśli potrzebujesz podpowiedzi';
+                        revealBtn.addEventListener('click', () => {
+                            revealBtn.replaceWith(Object.assign(document.createElement('span'), {
+                                className: 'revealed-hint-text',
+                                textContent: hintText
+                            }));
+                        });
+                        inputArea.appendChild(revealBtn);
+                    }
+                }
             }
             
             itemDiv.appendChild(inputArea);

@@ -189,6 +189,64 @@ header {
     background: var(--secondary-color);
 }
 
+/* Wariant podpowiedzi dla zadań z luką */
+.hint-option-block {
+    margin-top: 14px;
+    padding: 14px 18px;
+    background: #f0f9ff;
+    border: 2px dashed #7dd3fc;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: fadeIn 0.3s ease;
+}
+
+.hint-label {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #0369a1;
+}
+
+.hint-toggle-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.hint-btn {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 2px solid #bae6fd;
+    border-radius: 12px;
+    color: #0f172a;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hint-btn:hover {
+    background: #e0f2fe;
+    border-color: #38bdf8;
+}
+
+.hint-btn.active {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff;
+    border-color: #0284c7;
+    box-shadow: 0 3px 0 #075985;
+}
+
+.hint-btn-icon {
+    font-size: 1.1rem;
+}
+
 /* Krok 2: Wybór liczby pytań */
 .count-selector {
     display: flex;
@@ -414,6 +472,37 @@ button {
     color: #334155;
 }
 
+.hint-pill {
+    color: #0284c7;
+    font-weight: 800;
+    margin-left: 6px;
+}
+
+.reveal-hint-btn {
+    background: #fef3c7;
+    border: 1px solid #fde047;
+    color: #92400e;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    margin-left: 6px;
+    transition: all 0.2s ease;
+}
+.reveal-hint-btn:hover { background: #fde68a; }
+
+.revealed-hint-text {
+    color: #b45309;
+    font-weight: 800;
+    font-size: 0.9rem;
+    margin-left: 6px;
+    background: #fffbeb;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #fef3c7;
+}
+
 .input-area input {
     flex: 1;
     min-width: 150px;
@@ -610,6 +699,11 @@ button {
     100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(-4px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
 /* Responsywność */
 @media (max-width: 650px) {
     header {
@@ -640,5 +734,8 @@ button {
     }
     .summary-number {
         font-size: 1.5rem;
+    }
+    .hint-toggle-group {
+        flex-direction: column;
     }
 }
