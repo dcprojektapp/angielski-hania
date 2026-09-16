@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uczymy się Angielskiego! - English Class 4</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="header-left">
+                <h1>🌟 Uczymy się Angielskiego! 🌟</h1>
+                <p class="subtitle">Poziom: Szkoła Podstawowa (Klasa 4)</p>
+            </div>
+            <div class="score-board">
+                <span>Najlepszy Wynik: <strong id="best-score">0</strong> ⭐️</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- Menu wyboru modułu i tematu -->
+            <section class="topic-selection" id="topic-selection">
+                <div class="section-block">
+                    <span class="step-badge">Krok 1</span>
+                    <h2>Wybierz rodzaj ćwiczeń:</h2>
+                    <div class="modules-grid">
+                        <div class="module-card active" id="mod-translate" data-module="translate">
+                            <div class="module-icon">📝</div>
+                            <div class="module-info">
+                                <h3>Tłumaczenia zdań</h3>
+                                <p>Tłumacz z języka polskiego na angielski</p>
+                            </div>
+                            <div class="module-check">✔</div>
+                        </div>
+
+                        <div class="module-card" id="mod-gap" data-module="gap">
+                            <div class="module-icon">🧩</div>
+                            <div class="module-info">
+                                <h3>Zadania z luką</h3>
+                                <p>Wpisz brakujące słówko w angielskim zdaniu</p>
+                            </div>
+                            <div class="module-check">✔</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-block">
+                    <span class="step-badge">Krok 2</span>
+                    <h2>Wybierz materiał do powtórki:</h2>
+                    <div class="buttons-grid">
+                        <button class="topic-btn" data-topic="tobe">
+                            <span class="topic-icon">🐝</span>
+                            <span class="topic-name">Czasownik "to be"</span>
+                            <span class="topic-hint">am / is / are</span>
+                        </button>
+                        <button class="topic-btn" data-topic="tohave">
+                            <span class="topic-icon">🎒</span>
+                            <span class="topic-name">Czasownik "have got"</span>
+                            <span class="topic-hint">have / has got</span>
+                        </button>
+                        <button class="topic-btn" data-topic="can">
+                            <span class="topic-icon">⚡</span>
+                            <span class="topic-name">Czasownik "can"</span>
+                            <span class="topic-hint">can / cannot</span>
+                        </button>
+                        <button class="topic-btn btn-mix" data-topic="mix">
+                            <span class="topic-icon">🌈</span>
+                            <span class="topic-name">Wszystko naraz!</span>
+                            <span class="topic-hint">Super Mix (10 pytań)</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Widok ćwiczeń (10 zadań) -->
+            <section class="exercise-section hidden" id="exercise-section">
+                <div class="exercise-header">
+                    <button id="back-btn" class="secondary-btn">🔙 Zmień tryb</button>
+                    <div class="exercise-title-container">
+                        <span id="current-module-badge" class="mode-badge">📝 Tłumaczenia</span>
+                        <h2 id="current-topic-title">Czasownik "to be"</h2>
+                    </div>
+                    <span class="quiz-info">10 pytań</span>
+                </div>
+                
+                <div class="questions-list" id="questions-list">
+                    <!-- Zadania generowane przez JavaScript -->
+                </div>
+
+                <div class="test-controls">
+                    <button id="check-all-btn" class="primary-btn">Sprawdź odpowiedzi! 🚀</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Okno podsumowania z wynikami -->
+    <div class="modal hidden" id="celebration-modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Świetna robota! 🎉</h2>
+            <p id="modal-subtitle">Oto Twój wynik z tego testu:</p>
+
+            <div class="score-summary-grid">
+                <div class="summary-card correct-card">
+                    <div class="summary-icon">✅</div>
+                    <div class="summary-number" id="correct-count">0</div>
+                    <div class="summary-label">DOBRZE</div>
+                </div>
+                <div class="summary-card incorrect-card">
+                    <div class="summary-icon">❌</div>
+                    <div class="summary-number" id="incorrect-count">0</div>
+                    <div class="summary-label">ŹLE</div>
+                </div>
+                <div class="summary-card points-card">
+                    <div class="summary-icon">⭐️</div>
+                    <div class="summary-number" id="score-percentage">0%</div>
+                    <div class="summary-label">WYNIK</div>
+                </div>
+            </div>
+
+            <p id="final-score-text" class="final-score-msg"></p>
+
+            <div class="modal-buttons">
+                <button id="retry-btn" class="secondary-modal-btn">Spróbuj jeszcze raz 🔄</button>
+                <button id="continue-btn" class="primary-btn">Inny temat / moduł 🏠</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
