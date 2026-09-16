@@ -89,7 +89,7 @@ header {
 }
 
 .section-block {
-    margin-bottom: 35px;
+    margin-bottom: 30px;
     text-align: left;
 }
 
@@ -111,13 +111,13 @@ header {
 }
 
 .section-block h2 {
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 800;
     color: #1e293b;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
-/* Moduły - kafelki */
+/* Krok 1: Moduły - kafelki */
 .modules-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -189,7 +189,49 @@ header {
     background: var(--secondary-color);
 }
 
-/* Przyciski tematów (Czasowników) */
+/* Krok 2: Wybór liczby pytań */
+.count-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.count-btn {
+    flex: 1;
+    min-width: 90px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 3px solid #e2e8f0;
+    border-radius: 16px;
+    color: #334155;
+    font-size: 1.05rem;
+    font-weight: 800;
+    text-align: center;
+    box-shadow: 0 3px 0 #cbd5e1;
+    transition: all 0.2s ease;
+}
+
+.count-btn:hover {
+    border-color: var(--secondary-color);
+    background: #f0f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 0 #94a3b8;
+}
+
+.count-btn.active {
+    background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    border-color: #0284c7;
+    color: #ffffff;
+    box-shadow: 0 4px 0 #0369a1;
+    transform: translateY(-1px);
+}
+
+.count-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #94a3b8;
+}
+
+/* Krok 3: Przyciski tematów (Czasowników) */
 .buttons-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -306,11 +348,12 @@ button {
 
 .quiz-info {
     background: #f1f5f9;
-    color: #64748b;
+    color: #0284c7;
     padding: 6px 14px;
     border-radius: 14px;
     font-weight: 800;
     font-size: 0.9rem;
+    white-space: nowrap;
 }
 
 /* Lista pytań */
@@ -516,9 +559,19 @@ button {
 }
 
 .summary-number {
-    font-size: 2rem;
+    font-size: 1.9rem;
     font-weight: 900;
     line-height: 1;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2px;
+}
+
+.total-denom {
+    font-size: 1rem;
+    opacity: 0.7;
+    font-weight: 700;
 }
 
 .summary-label {

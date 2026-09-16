@@ -12,7 +12,7 @@
         <header>
             <div class="header-left">
                 <h1>🌟 Uczymy się Angielskiego! 🌟</h1>
-                <p class="subtitle">Poziom: Szkoła Podstawowa (Klasa 4)</p>
+                <p class="subtitle">Poziom: Szkoła Podstawowa (Klasa 4 • English Class 4)</p>
             </div>
             <div class="score-board">
                 <span>Najlepszy Wynik: <strong id="best-score">0</strong> ⭐️</span>
@@ -20,8 +20,9 @@
         </header>
 
         <main>
-            <!-- Menu wyboru modułu i tematu -->
+            <!-- Menu wyboru modułu, liczby zadań i tematu -->
             <section class="topic-selection" id="topic-selection">
+                <!-- Krok 1: Moduł -->
                 <div class="section-block">
                     <span class="step-badge">Krok 1</span>
                     <h2>Wybierz rodzaj ćwiczeń:</h2>
@@ -46,35 +47,49 @@
                     </div>
                 </div>
 
+                <!-- Krok 2: Liczba pytań -->
                 <div class="section-block">
                     <span class="step-badge">Krok 2</span>
-                    <h2>Wybierz materiał do powtórki:</h2>
+                    <h2>Wybierz ile zadań chcesz rozwiązać:</h2>
+                    <div class="count-selector" id="count-selector">
+                        <button type="button" class="count-btn active" data-count="10">10 pytań</button>
+                        <button type="button" class="count-btn" data-count="20">20 pytań</button>
+                        <button type="button" class="count-btn" data-count="30">30 pytań</button>
+                        <button type="button" class="count-btn" data-count="40">40 pytań</button>
+                        <button type="button" class="count-btn" data-count="50">50 pytań</button>
+                    </div>
+                </div>
+
+                <!-- Krok 3: Czasownik -->
+                <div class="section-block">
+                    <span class="step-badge">Krok 3</span>
+                    <h2>Wybierz materiał i zacznij quiz:</h2>
                     <div class="buttons-grid">
                         <button class="topic-btn" data-topic="tobe">
                             <span class="topic-icon">🐝</span>
                             <span class="topic-name">Czasownik "to be"</span>
-                            <span class="topic-hint">am / is / are</span>
+                            <span class="topic-hint">am / is / are (50+50 pytań)</span>
                         </button>
                         <button class="topic-btn" data-topic="tohave">
                             <span class="topic-icon">🎒</span>
                             <span class="topic-name">Czasownik "have got"</span>
-                            <span class="topic-hint">have / has got</span>
+                            <span class="topic-hint">have / has got (50+50 pytań)</span>
                         </button>
                         <button class="topic-btn" data-topic="can">
                             <span class="topic-icon">⚡</span>
                             <span class="topic-name">Czasownik "can"</span>
-                            <span class="topic-hint">can / cannot</span>
+                            <span class="topic-hint">can / cannot (50+50 pytań)</span>
                         </button>
                         <button class="topic-btn btn-mix" data-topic="mix">
                             <span class="topic-icon">🌈</span>
                             <span class="topic-name">Wszystko naraz!</span>
-                            <span class="topic-hint">Super Mix (10 pytań)</span>
+                            <span class="topic-hint">Super Mix (300 pytań)</span>
                         </button>
                     </div>
                 </div>
             </section>
 
-            <!-- Widok ćwiczeń (10 zadań) -->
+            <!-- Widok ćwiczeń -->
             <section class="exercise-section hidden" id="exercise-section">
                 <div class="exercise-header">
                     <button id="back-btn" class="secondary-btn">🔙 Zmień tryb</button>
@@ -82,11 +97,11 @@
                         <span id="current-module-badge" class="mode-badge">📝 Tłumaczenia</span>
                         <h2 id="current-topic-title">Czasownik "to be"</h2>
                     </div>
-                    <span class="quiz-info">10 pytań</span>
+                    <span class="quiz-info" id="quiz-count-badge">10 pytań</span>
                 </div>
                 
                 <div class="questions-list" id="questions-list">
-                    <!-- Zadania generowane przez JavaScript -->
+                    <!-- Zadania generowane dynamicznie -->
                 </div>
 
                 <div class="test-controls">
@@ -105,12 +120,12 @@
             <div class="score-summary-grid">
                 <div class="summary-card correct-card">
                     <div class="summary-icon">✅</div>
-                    <div class="summary-number" id="correct-count">0</div>
+                    <div class="summary-number"><span id="correct-count">0</span><span class="total-denom" id="total-count-denom">/10</span></div>
                     <div class="summary-label">DOBRZE</div>
                 </div>
                 <div class="summary-card incorrect-card">
                     <div class="summary-icon">❌</div>
-                    <div class="summary-number" id="incorrect-count">0</div>
+                    <div class="summary-number"><span id="incorrect-count">0</span><span class="total-denom" id="total-count-denom-err">/10</span></div>
                     <div class="summary-label">ŹLE</div>
                 </div>
                 <div class="summary-card points-card">
