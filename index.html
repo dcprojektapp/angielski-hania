@@ -3,31 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uczymy się Angielskiego! - English Class 4</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <title>Angielski dla Szkoły Podstawowej - English Class</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-container">
+        <!-- Pasek górny -->
         <header>
             <div class="header-left">
-                <h1>🌟 Uczymy się Angielskiego! 🌟</h1>
-                <p class="subtitle">Poziom: Szkoła Podstawowa (Klasa 4 • English Class 4)</p>
+                <h1>🌟 Angielski dla Szkoły Podstawowej 🌟</h1>
+                <p class="subtitle">Platforma powtórkowa i sprawdziany działowe</p>
             </div>
             <div class="score-board">
                 <span>Najlepszy Wynik: <strong id="best-score">0</strong> ⭐️</span>
             </div>
         </header>
 
+        <!-- Pasek wyboru Klasy (docelowa rozbudowa o całą podstawówkę) -->
+        <nav class="class-nav" aria-label="Wybór klasy">
+            <div class="class-nav-label">Klasa:</div>
+            <div class="class-pills">
+                <button type="button" class="class-pill active" data-class="4">Klasa 4 <span class="pill-tag">English Class 4</span></button>
+                <button type="button" class="class-pill coming-soon" data-class="5">Klasa 5 <span class="pill-badge">Wkrótce</span></button>
+                <button type="button" class="class-pill coming-soon" data-class="6">Klasa 6 <span class="pill-badge">Wkrótce</span></button>
+                <button type="button" class="class-pill coming-soon" data-class="7">Klasa 7 <span class="pill-badge">Wkrótce</span></button>
+                <button type="button" class="class-pill coming-soon" data-class="8">Klasa 8 <span class="pill-badge">Egzamin</span></button>
+            </div>
+        </nav>
+
+        <!-- Główne menu zakładek -->
+        <div class="main-tabs">
+            <button type="button" class="tab-btn active" id="tab-units-btn" data-tab="units">
+                <span class="tab-icon">📚</span>
+                <span class="tab-title">Działy i Lekcje</span>
+            </button>
+            <button type="button" class="tab-btn" id="tab-tests-btn" data-tab="tests">
+                <span class="tab-icon">📝</span>
+                <span class="tab-title">Sprawdziany z Działów</span>
+            </button>
+            <button type="button" class="tab-btn" id="tab-trainer-btn" data-tab="trainer">
+                <span class="tab-icon">⚡</span>
+                <span class="tab-title">Trening Gramatyczny (300 pytań)</span>
+            </button>
+        </div>
+
         <main>
-            <!-- Menu wyboru modułu, liczby zadań i tematu -->
-            <section class="topic-selection" id="topic-selection">
-                <!-- Krok 1: Moduł -->
+            <!-- WIDOK 1: DZIAŁY I LEKCJE (Dashboard) -->
+            <section class="view-panel" id="view-units">
+                <div class="section-heading">
+                    <h2>Działy podręcznika English Class 4:</h2>
+                    <p>Wybierz dział, aby powtórzyć słownictwo, gramatykę i zrobić ćwiczenia z lekcji.</p>
+                </div>
+                <div class="units-grid" id="units-list-container">
+                    <!-- Dynamicznie generowane kafelki działów Unit 0-8 -->
+                </div>
+            </section>
+
+            <!-- WIDOK 2: SPRAWDZIANY Z DZIAŁÓW (Wybór Działu i Grupy A/B) -->
+            <section class="view-panel hidden" id="view-tests-menu">
+                <div class="section-heading">
+                    <h2>📝 Przykładowe Sprawdziany Działowe</h2>
+                    <p>Wybierz dział oraz grupę (Grupa A lub Grupa B). Sprawdziany są w formacie tekstowym, bez obrazków – dokładnie jak w szkole!</p>
+                </div>
+                <div class="tests-selection-grid" id="tests-list-container">
+                    <!-- Dynamicznie generowane karty wyboru sprawdzianów Unit 0-8 z przyciskami Grupa A / Grupa B -->
+                </div>
+            </section>
+
+            <!-- WIDOK 3: LEKCJA I ĆWICZENIA Z WYBRANEGO DZIAŁU -->
+            <section class="view-panel hidden" id="view-lesson">
+                <div class="panel-header">
+                    <button type="button" class="secondary-btn back-to-units-btn">🔙 Wróć do działów</button>
+                    <div class="panel-title-area">
+                        <span class="unit-badge" id="lesson-unit-badge">Unit 1</span>
+                        <h2 id="lesson-unit-title">Family and friends</h2>
+                    </div>
+                    <button type="button" class="primary-pill-btn" id="go-to-unit-test-btn">Napisz sprawdzian 📝</button>
+                </div>
+
+                <!-- Pigułka ze ściągawką gramatyczną i słowniczkiem -->
+                <div class="cheat-sheet-card" id="cheat-sheet-card">
+                    <div class="cheat-sheet-header">
+                        <h3>📖 Ściągawka z działu (Zasady w pigułce)</h3>
+                    </div>
+                    <div class="cheat-sheet-body">
+                        <div class="cheat-block">
+                            <strong>🎯 Najważniejsza gramatyka:</strong>
+                            <p id="lesson-grammar-summary"></p>
+                        </div>
+                        <div class="cheat-block">
+                            <strong>🔤 Kluczowe słownictwo:</strong>
+                            <p id="lesson-vocab-summary"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Konfiguracja ćwiczeń z lekcji -->
+                <div class="lesson-exercises-ctrl">
+                    <h3>Wybierz tryb ćwiczeń z tej lekcji:</h3>
+                    <div class="exercise-modes-row">
+                        <div class="modules-grid mini-modules">
+                            <div class="module-card active" id="lesson-mod-translate" data-lesson-mode="translate">
+                                <div class="module-icon">📝</div>
+                                <div class="module-info">
+                                    <h4>Tłumaczenia zdań</h4>
+                                    <p>Z polskiego na angielski</p>
+                                </div>
+                            </div>
+                            <div class="module-card" id="lesson-mod-gap" data-lesson-mode="gap">
+                                <div class="module-icon">🧩</div>
+                                <div class="module-info">
+                                    <h4>Zadania z luką</h4>
+                                    <p>Uzupełnianie w zdaniach</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opcja podpowiedzi dla zadań z luką w lekcji -->
+                        <div class="hint-option-block hidden" id="lesson-hint-block">
+                            <span class="hint-label">Podpowiedzi w zdaniach:</span>
+                            <div class="hint-toggle-group">
+                                <button type="button" class="hint-btn active" data-lesson-hint="with">💡 Z podpowiedziami</button>
+                                <button type="button" class="hint-btn" data-lesson-hint="without">🎯 Bez podpowiedzi</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista zadań lekcyjnych -->
+                <div class="questions-list" id="lesson-questions-list"></div>
+
+                <div class="test-controls">
+                    <button type="button" id="lesson-check-btn" class="primary-btn">Sprawdź odpowiedzi! 🚀</button>
+                </div>
+            </section>
+
+            <!-- WIDOK 4: ARKUSZ SPRAWDZIANU SZKOLNEGO (Unit Test - Grupa A / B) -->
+            <section class="view-panel hidden" id="view-test-sheet">
+                <div class="test-sheet-header">
+                    <button type="button" class="secondary-btn back-to-tests-btn">🔙 Wróć do sprawdzianów</button>
+                    <div class="test-sheet-title-box">
+                        <span class="test-sheet-badge" id="test-sheet-group-badge">GRUPA A</span>
+                        <h2 id="test-sheet-title">Sprawdzian Unit 1: Family and friends</h2>
+                        <p class="test-sheet-info">Arkusz testowy • Czas: bez limitu • Brak obrazków (sam tekst)</p>
+                    </div>
+                    <div class="test-points-pill">Maks: <strong id="test-max-points">20 pkt</strong></div>
+                </div>
+
+                <div class="test-tasks-container" id="test-tasks-container">
+                    <!-- Dynamicznie generowane Zadanie 1, 2, 3, 4, 5 -->
+                </div>
+
+                <div class="test-sheet-footer">
+                    <button type="button" id="submit-test-btn" class="submit-test-btn">Oddaj sprawdzian do oceny! 📝</button>
+                </div>
+            </section>
+
+            <!-- WIDOK 5: TRENING GRAMATYCZNY EXPRESS (ZACHOWANY POPRZEDNI MODUŁ 300 PYTAŃ) -->
+            <section class="view-panel hidden" id="view-trainer">
                 <div class="section-block">
                     <span class="step-badge">Krok 1</span>
                     <h2>Wybierz rodzaj ćwiczeń:</h2>
                     <div class="modules-grid">
-                        <div class="module-card active" id="mod-translate" data-module="translate">
+                        <div class="module-card active" id="trainer-mod-translate" data-module="translate">
                             <div class="module-icon">📝</div>
                             <div class="module-info">
                                 <h3>Tłumaczenia zdań</h3>
@@ -36,7 +175,7 @@
                             <div class="module-check">✔</div>
                         </div>
 
-                        <div class="module-card" id="mod-gap" data-module="gap">
+                        <div class="module-card" id="trainer-mod-gap" data-module="gap">
                             <div class="module-icon">🧩</div>
                             <div class="module-info">
                                 <h3>Zadania z luką</h3>
@@ -46,15 +185,14 @@
                         </div>
                     </div>
 
-                    <!-- Podopcja dla Zadań z luką: z podpowiedzią lub bez -->
-                    <div class="hint-option-block hidden" id="hint-option-block">
+                    <div class="hint-option-block hidden" id="trainer-hint-block">
                         <span class="hint-label">Podpowiedzi w zdaniach:</span>
                         <div class="hint-toggle-group">
-                            <button type="button" class="hint-btn active" data-hint="with">
+                            <button type="button" class="hint-btn active" data-trainer-hint="with">
                                 <span class="hint-btn-icon">💡</span>
-                                <span class="hint-btn-text"><strong>Z podpowiedziami</strong> (np. „(jestem)”)</span>
+                                <span class="hint-btn-text"><strong>Z podpowiedziami</strong> (np. „(jestem)”)</span >
                             </button>
-                            <button type="button" class="hint-btn" data-hint="without">
+                            <button type="button" class="hint-btn" data-trainer-hint="without">
                                 <span class="hint-btn-icon">🎯</span>
                                 <span class="hint-btn-text"><strong>Bez podpowiedzi</strong> (sam angielski)</span>
                             </button>
@@ -62,11 +200,10 @@
                     </div>
                 </div>
 
-                <!-- Krok 2: Liczba pytań -->
                 <div class="section-block">
                     <span class="step-badge">Krok 2</span>
                     <h2>Wybierz ile zadań chcesz rozwiązać:</h2>
-                    <div class="count-selector" id="count-selector">
+                    <div class="count-selector" id="trainer-count-selector">
                         <button type="button" class="count-btn active" data-count="10">10 pytań</button>
                         <button type="button" class="count-btn" data-count="20">20 pytań</button>
                         <button type="button" class="count-btn" data-count="30">30 pytań</button>
@@ -75,62 +212,59 @@
                     </div>
                 </div>
 
-                <!-- Krok 3: Czasownik -->
                 <div class="section-block">
                     <span class="step-badge">Krok 3</span>
-                    <h2>Wybierz materiał i zacznij quiz:</h2>
+                    <h2>Wybierz czasownik i zacznij quiz:</h2>
                     <div class="buttons-grid">
-                        <button class="topic-btn" data-topic="tobe">
+                        <button type="button" class="topic-btn" data-topic="tobe">
                             <span class="topic-icon">🐝</span>
                             <span class="topic-name">Czasownik "to be"</span>
                             <span class="topic-hint">am / is / are (50+50 pytań)</span>
                         </button>
-                        <button class="topic-btn" data-topic="tohave">
+                        <button type="button" class="topic-btn" data-topic="tohave">
                             <span class="topic-icon">🎒</span>
                             <span class="topic-name">Czasownik "have got"</span>
                             <span class="topic-hint">have / has got (50+50 pytań)</span>
                         </button>
-                        <button class="topic-btn" data-topic="can">
+                        <button type="button" class="topic-btn" data-topic="can">
                             <span class="topic-icon">⚡</span>
                             <span class="topic-name">Czasownik "can"</span>
                             <span class="topic-hint">can / cannot (50+50 pytań)</span>
                         </button>
-                        <button class="topic-btn btn-mix" data-topic="mix">
+                        <button type="button" class="topic-btn btn-mix" data-topic="mix">
                             <span class="topic-icon">🌈</span>
                             <span class="topic-name">Wszystko naraz!</span>
                             <span class="topic-hint">Super Mix (300 pytań)</span>
                         </button>
                     </div>
                 </div>
-            </section>
 
-            <!-- Widok ćwiczeń -->
-            <section class="exercise-section hidden" id="exercise-section">
-                <div class="exercise-header">
-                    <button id="back-btn" class="secondary-btn">🔙 Zmień tryb</button>
-                    <div class="exercise-title-container">
-                        <span id="current-module-badge" class="mode-badge">📝 Tłumaczenia</span>
-                        <h2 id="current-topic-title">Czasownik "to be"</h2>
+                <!-- Widok pytań z treningu -->
+                <div class="exercise-section hidden" id="trainer-exercise-subview">
+                    <div class="exercise-header">
+                        <button type="button" id="trainer-back-btn" class="secondary-btn">🔙 Zmień parametry</button>
+                        <div class="exercise-title-container">
+                            <span id="trainer-module-badge" class="mode-badge">📝 Tłumaczenia</span>
+                            <h2 id="trainer-topic-title">Czasownik "to be"</h2>
+                        </div>
+                        <span class="quiz-info" id="trainer-count-badge">10 pytań</span>
                     </div>
-                    <span class="quiz-info" id="quiz-count-badge">10 pytań</span>
-                </div>
-                
-                <div class="questions-list" id="questions-list">
-                    <!-- Zadania generowane dynamicznie -->
-                </div>
+                    
+                    <div class="questions-list" id="trainer-questions-list"></div>
 
-                <div class="test-controls">
-                    <button id="check-all-btn" class="primary-btn">Sprawdź odpowiedzi! 🚀</button>
+                    <div class="test-controls">
+                        <button type="button" id="trainer-check-all-btn" class="primary-btn">Sprawdź odpowiedzi! 🚀</button>
+                    </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Okno podsumowania z wynikami -->
+    <!-- Modal podsumowania ćwiczeń (dobrze/źle) -->
     <div class="modal hidden" id="celebration-modal">
         <div class="modal-content">
             <h2 id="modal-title">Świetna robota! 🎉</h2>
-            <p id="modal-subtitle">Oto Twój wynik z tego testu:</p>
+            <p id="modal-subtitle">Oto Twój wynik:</p>
 
             <div class="score-summary-grid">
                 <div class="summary-card correct-card">
@@ -153,12 +287,46 @@
             <p id="final-score-text" class="final-score-msg"></p>
 
             <div class="modal-buttons">
-                <button id="retry-btn" class="secondary-modal-btn">Spróbuj jeszcze raz 🔄</button>
-                <button id="continue-btn" class="primary-btn">Inny temat / moduł 🏠</button>
+                <button type="button" id="modal-retry-btn" class="secondary-modal-btn">Spróbuj jeszcze raz 🔄</button>
+                <button type="button" id="modal-close-btn" class="primary-btn">Wróć do menu 🏠</button>
             </div>
         </div>
     </div>
 
+    <!-- Modal oceny ze sprawdzianu szkolnego (Cenzurka 1-6) -->
+    <div class="modal hidden" id="test-grade-modal">
+        <div class="modal-content grade-modal-content">
+            <div class="grade-badge-circle" id="grade-badge-circle">
+                <span class="grade-number" id="grade-number">6</span>
+                <span class="grade-word" id="grade-word">Celujący</span>
+            </div>
+            <h2 id="grade-title">Wspaniały wynik na sprawdzianie! 🏆</h2>
+            <p class="grade-desc" id="grade-desc">Gratulacje! Świetnie opanowany materiał z działu.</p>
+
+            <div class="grade-details-box">
+                <div class="grade-metric">
+                    <span class="metric-label">Zdobyte punkty:</span>
+                    <strong class="metric-val" id="test-score-points">19 / 20 pkt</strong>
+                </div>
+                <div class="grade-metric">
+                    <span class="metric-label">Wynik procentowy:</span>
+                    <strong class="metric-val" id="test-score-pct">95%</strong>
+                </div>
+                <div class="grade-metric">
+                    <span class="metric-label">Arkusz:</span>
+                    <strong class="metric-val" id="test-group-label">Grupa A</strong>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" id="review-test-btn" class="secondary-modal-btn">Przejrzyj swoje odpowiedzi 👀</button>
+                <button type="button" id="close-grade-modal-btn" class="primary-btn">Wróć do sprawdzianów 📝</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dołączenie bazy danych działów i logiki aplikacji -->
+    <script src="unitsData.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

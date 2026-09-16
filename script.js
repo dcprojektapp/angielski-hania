@@ -358,132 +358,904 @@ const db = {
     ]
 };
 
-// Stan aplikacji
-let selectedModule = 'translate';      // 'translate' lub 'gap'
-let gapHintMode = 'with';              // 'with' lub 'without'
-let selectedQuestionCount = 10;        // 10, 20, 30, 40, 50
-let currentTopic = '';                 // 'tobe', 'tohave', 'can', 'mix'
-let currentQuestions = [];
+// ==========================================
+// KONTROLER APLIKACJI - SZKOŁA PODSTAWOWA
+// Obsługa: Działy (Lekcje), Sprawdziany (Grupa A/B) oraz Trening Express
+// ==========================================
+
 let bestScore = parseInt(localStorage.getItem('english_best_score') || '0', 10);
-
-// Elementy DOM
-const topicSelection = document.getElementById('topic-selection');
-const exerciseSection = document.getElementById('exercise-section');
-const currentTopicTitle = document.getElementById('current-topic-title');
-const currentModuleBadge = document.getElementById('current-module-badge');
-const quizCountBadge = document.getElementById('quiz-count-badge');
-const questionsList = document.getElementById('questions-list');
-const checkAllBtn = document.getElementById('check-all-btn');
-const backBtn = document.getElementById('back-btn');
 const bestScoreDisplay = document.getElementById('best-score');
+if (bestScoreDisplay) bestScoreDisplay.textContent = bestScore;
 
-// Modal podsumowania
-const celebrationModal = document.getElementById('celebration-modal');
-const modalTitle = document.getElementById('modal-title');
-const modalSubtitle = document.getElementById('modal-subtitle');
-const correctCountElem = document.getElementById('correct-count');
-const incorrectCountElem = document.getElementById('incorrect-count');
-const totalCountDenom = document.getElementById('total-count-denom');
-const totalCountDenomErr = document.getElementById('total-count-denom-err');
-const scorePercentageElem = document.getElementById('score-percentage');
-const finalScoreText = document.getElementById('final-score-text');
-const continueBtn = document.getElementById('continue-btn');
-const retryBtn = document.getElementById('retry-btn');
+// Główne elementy nawigacji
+const tabUnitsBtn = document.getElementById('tab-units-btn');
+const tabTestsBtn = document.getElementById('tab-tests-btn');
+const tabTrainerBtn = document.getElementById('tab-trainer-btn');
 
-// Przełączniki modułów, wariantu podpowiedzi i selektor liczby zadań
-const modTranslate = document.getElementById('mod-translate');
-const modGap = document.getElementById('mod-gap');
-const hintOptionBlock = document.getElementById('hint-option-block');
-const hintButtons = document.querySelectorAll('.hint-btn');
-const countButtons = document.querySelectorAll('.count-btn');
-const topicButtons = document.querySelectorAll('.topic-btn');
+const viewUnits = document.getElementById('view-units');
+const viewTestsMenu = document.getElementById('view-tests-menu');
+const viewLesson = document.getElementById('view-lesson');
+const viewTestSheet = document.getElementById('view-test-sheet');
+const viewTrainer = document.getElementById('view-trainer');
 
-// Inicjalizacja najlepszego wyniku
-bestScoreDisplay.textContent = bestScore;
+// Stan lekcji działowej
+let currentUnit = null;
+let lessonMode = 'translate';      // 'translate' lub 'gap'
+let lessonHintMode = 'with';        // 'with' lub 'without'
+let lessonCurrentQuestions = [];
 
-// Obsługa wyboru modułu (Krok 1)
-modTranslate.addEventListener('click', () => setModule('translate'));
-modGap.addEventListener('click', () => setModule('gap'));
+// Stan sprawdzianu
+let currentTestUnit = null;
+let currentTestGroup = 'groupA';
 
-function setModule(mode) {
-    selectedModule = mode;
-    if (mode === 'translate') {
-        modTranslate.classList.add('active');
-        modGap.classList.remove('active');
-        hintOptionBlock.classList.add('hidden');
-    } else {
-        modGap.classList.add('active');
-        modTranslate.classList.remove('active');
-        hintOptionBlock.classList.remove('hidden');
+// Stan treningu gramatycznego (300 pytań)
+let trainerModule = 'translate';
+let trainerHintMode = 'with';
+let trainerQuestionCount = 10;
+let trainerTopic = '';
+let trainerQuestions = [];
+
+// ==========================================
+// 1. ZARZĄDZANIE WIDOKAMI I ZAKŁADKAMI
+// ==========================================
+
+function switchMainTab(tabName) {
+    // Ukryj wszystkie panele
+    viewUnits.classList.add('hidden');
+    viewTestsMenu.classList.add('hidden');
+    viewLesson.classList.add('hidden');
+    viewTestSheet.classList.add('hidden');
+    viewTrainer.classList.add('hidden');
+
+    tabUnitsBtn.classList.remove('active');
+    tabTestsBtn.classList.remove('active');
+    tabTrainerBtn.classList.remove('active');
+
+    if (tabName === 'units') {
+        tabUnitsBtn.classList.add('active');
+        viewUnits.classList.remove('hidden');
+        renderUnitsList();
+    } else if (tabName === 'tests') {
+        tabTestsBtn.classList.add('active');
+        viewTestsMenu.classList.remove('hidden');
+        renderTestsMenu();
+    } else if (tabName === 'trainer') {
+        tabTrainerBtn.classList.add('active');
+        viewTrainer.classList.remove('hidden');
     }
-}
-
-// Obsługa wyboru podpowiedzi (z podpowiedziami / bez podpowiedzi)
-hintButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        hintButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        gapHintMode = btn.dataset.hint; // 'with' lub 'without'
-    });
-});
-
-// Obsługa wyboru liczby pytań (Krok 2)
-countButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        countButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedQuestionCount = parseInt(btn.dataset.count, 10);
-    });
-});
-
-// Obsługa wyboru tematu (Krok 3)
-topicButtons.forEach(btn => {
-    btn.addEventListener('click', () => startQuiz(btn.dataset.topic));
-});
-
-backBtn.addEventListener('click', showTopicSelection);
-checkAllBtn.addEventListener('click', checkAnswers);
-
-continueBtn.addEventListener('click', () => {
-    celebrationModal.classList.add('hidden');
-    showTopicSelection();
-});
-
-retryBtn.addEventListener('click', () => {
-    celebrationModal.classList.add('hidden');
-    loadQuiz();
-});
-
-function startQuiz(topic) {
-    currentTopic = topic;
-    topicSelection.classList.add('hidden');
-    exerciseSection.classList.remove('hidden');
-    
-    // Ustawienie etykiety modułu
-    if (selectedModule === 'translate') {
-        currentModuleBadge.textContent = '📝 Tłumaczenia zdań';
-    } else {
-        currentModuleBadge.textContent = gapHintMode === 'with' 
-            ? '🧩 Zadania z luką (z podpowiedziami)' 
-            : '🧩 Zadania z luką (bez podpowiedzi)';
-    }
-
-    // Ustawienie tytułu tematu
-    let title = '';
-    if (topic === 'tobe') title = 'Czasownik "to be"';
-    if (topic === 'tohave') title = 'Czasownik "have got"';
-    if (topic === 'can') title = 'Czasownik "can"';
-    if (topic === 'mix') title = 'Super Mix (Wszystko naraz)';
-    currentTopicTitle.textContent = title;
-    quizCountBadge.textContent = `${selectedQuestionCount} pytań`;
-    
-    loadQuiz();
-}
-
-function showTopicSelection() {
-    exerciseSection.classList.add('hidden');
-    topicSelection.classList.remove('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+tabUnitsBtn.addEventListener('click', () => switchMainTab('units'));
+tabTestsBtn.addEventListener('click', () => switchMainTab('tests'));
+tabTrainerBtn.addEventListener('click', () => switchMainTab('trainer'));
+
+// Obsługa pigułek klas (przygotowanie pod całą podstawówkę)
+document.querySelectorAll('.class-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+        if (pill.dataset.class === '4') {
+            switchMainTab('units');
+        } else {
+            alert(`Materiały dla Klasy ${pill.dataset.class} są przygotowywane w ramach kolejnych aktualizacji bazy! Obecnie aktywny jest pełny podręcznik dla Klasy 4 (English Class 4).`);
+        }
+    });
+});
+
+// ==========================================
+// 2. WIDOK DZIAŁÓW I LEKCJI (Unit 0 - 8)
+// ==========================================
+
+function renderUnitsList() {
+    const container = document.getElementById('units-list-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    unitsData.forEach(unit => {
+        const card = document.createElement('div');
+        card.className = 'unit-card';
+        card.innerHTML = `
+            <div class="unit-card-header">
+                <div class="unit-card-icon" style="color: ${unit.color}">${unit.icon}</div>
+                <div class="unit-card-titles">
+                    <span class="unit-number-tag">Unit ${unit.number}</span>
+                    <h3>${unit.title}</h3>
+                </div>
+            </div>
+            <p class="unit-card-desc">${unit.subtitle}</p>
+            <div class="unit-card-actions">
+                <button type="button" class="btn-unit-learn" data-unit-id="${unit.id}">Ucz się działu 📖</button>
+                <button type="button" class="btn-unit-test" data-unit-id="${unit.id}">Sprawdzian 📝</button>
+            </div>
+        `;
+
+        card.querySelector('.btn-unit-learn').addEventListener('click', () => openUnitLesson(unit));
+        card.querySelector('.btn-unit-test').addEventListener('click', () => {
+            switchMainTab('tests');
+            const targetTestCard = document.getElementById(`test-card-${unit.id}`);
+            if (targetTestCard) targetTestCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        container.appendChild(card);
+    });
+}
+
+function openUnitLesson(unit) {
+    currentUnit = unit;
+    viewUnits.classList.add('hidden');
+    viewLesson.classList.remove('hidden');
+
+    document.getElementById('lesson-unit-badge').textContent = `Unit ${unit.number}`;
+    document.getElementById('lesson-unit-title').textContent = unit.title;
+    document.getElementById('lesson-grammar-summary').textContent = unit.summary.grammar;
+    document.getElementById('lesson-vocab-summary').textContent = unit.summary.vocab;
+
+    loadLessonQuestions();
+}
+
+// Przyciski powrotu w lekcji
+document.querySelectorAll('.back-to-units-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        viewLesson.classList.add('hidden');
+        viewUnits.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});
+
+document.getElementById('go-to-unit-test-btn').addEventListener('click', () => {
+    if (currentUnit) {
+        startUnitTest(currentUnit, 'groupA');
+    }
+});
+
+// Przełączanie trybu ćwiczeń w lekcji (Tłumaczenia vs Luki)
+const lessonModTranslate = document.getElementById('lesson-mod-translate');
+const lessonModGap = document.getElementById('lesson-mod-gap');
+const lessonHintBlock = document.getElementById('lesson-hint-block');
+
+lessonModTranslate.addEventListener('click', () => {
+    lessonMode = 'translate';
+    lessonModTranslate.classList.add('active');
+    lessonModGap.classList.remove('active');
+    lessonHintBlock.classList.add('hidden');
+    loadLessonQuestions();
+});
+
+lessonModGap.addEventListener('click', () => {
+    lessonMode = 'gap';
+    lessonModGap.classList.add('active');
+    lessonModTranslate.classList.remove('active');
+    lessonHintBlock.classList.remove('hidden');
+    loadLessonQuestions();
+});
+
+document.querySelectorAll('[data-lesson-hint]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-lesson-hint]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        lessonHintMode = btn.dataset.lessonHint;
+        loadLessonQuestions();
+    });
+});
+
+function loadLessonQuestions() {
+    if (!currentUnit) return;
+    const questionsList = document.getElementById('lesson-questions-list');
+    const checkBtn = document.getElementById('lesson-check-btn');
+    questionsList.innerHTML = '';
+    checkBtn.disabled = false;
+    checkBtn.textContent = "Sprawdź odpowiedzi! 🚀";
+
+    lessonCurrentQuestions = currentUnit.exercises.filter(ex => ex.type === lessonMode);
+
+    lessonCurrentQuestions.forEach((q, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'question-item card';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'exercise-type';
+        headerDiv.textContent = `Zadanie ${index + 1} / ${lessonCurrentQuestions.length} • ${lessonMode === 'translate' ? 'TŁUMACZENIE' : 'UZUPEŁNIJ LUKĘ'}`;
+        itemDiv.appendChild(headerDiv);
+
+        if (q.type === 'translate') {
+            const qText = document.createElement('div');
+            qText.className = 'question';
+            qText.textContent = q.polish;
+            itemDiv.appendChild(qText);
+
+            const inputArea = document.createElement('div');
+            inputArea.className = 'input-area';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `lesson-input-${index}`;
+            input.placeholder = "Napisz po angielsku...";
+            input.autocomplete = "off";
+            input.spellcheck = false;
+
+            inputArea.appendChild(input);
+            itemDiv.appendChild(inputArea);
+        } else if (q.type === 'gap') {
+            const inputArea = document.createElement('div');
+            inputArea.className = 'input-area gap-fill-area';
+
+            if (q.prefix) {
+                const prefix = document.createElement('span');
+                prefix.className = 'gap-text';
+                prefix.textContent = q.prefix;
+                inputArea.appendChild(prefix);
+            }
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `lesson-input-${index}`;
+            input.autocomplete = "off";
+            input.spellcheck = false;
+            input.placeholder = "...";
+            inputArea.appendChild(input);
+
+            if (q.suffix) {
+                const match = q.suffix.match(/^(.*?)(\s*\([^)]+\))\s*$/);
+                let mainText = q.suffix;
+                let hintText = "";
+                if (match) {
+                    mainText = match[1];
+                    hintText = match[2].trim();
+                }
+
+                const suffix = document.createElement('span');
+                suffix.className = 'gap-text';
+                suffix.textContent = mainText;
+                inputArea.appendChild(suffix);
+
+                if (hintText) {
+                    if (lessonHintMode === 'with') {
+                        const hintSpan = document.createElement('span');
+                        hintSpan.className = 'hint-pill';
+                        hintSpan.textContent = ` ${hintText}`;
+                        inputArea.appendChild(hintSpan);
+                    } else {
+                        const revealBtn = document.createElement('button');
+                        revealBtn.type = 'button';
+                        revealBtn.className = 'reveal-hint-btn';
+                        revealBtn.textContent = '💡 Podpowiedź';
+                        revealBtn.title = 'Pokaż podpowiedź';
+                        revealBtn.addEventListener('click', () => {
+                            revealBtn.replaceWith(Object.assign(document.createElement('span'), {
+                                className: 'revealed-hint-text',
+                                textContent: hintText
+                            }));
+                        });
+                        inputArea.appendChild(revealBtn);
+                    }
+                }
+            }
+
+            itemDiv.appendChild(inputArea);
+        }
+
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+        feedback.id = `lesson-feedback-${index}`;
+        itemDiv.appendChild(feedback);
+
+        questionsList.appendChild(itemDiv);
+    });
+}
+
+document.getElementById('lesson-check-btn').addEventListener('click', () => {
+    let correctCount = 0;
+    let incorrectCount = 0;
+
+    lessonCurrentQuestions.forEach((q, index) => {
+        const input = document.getElementById(`lesson-input-${index}`);
+        const feedback = document.getElementById(`lesson-feedback-${index}`);
+        const userAns = input.value;
+
+        let isCorrect = false;
+        if (q.type === 'translate') {
+            isCorrect = isAnswerCorrect(userAns, q.english);
+        } else {
+            isCorrect = isAnswerCorrect(userAns, q.expected);
+        }
+
+        input.disabled = true;
+
+        if (isCorrect) {
+            input.classList.add('correct');
+            input.classList.remove('incorrect');
+            feedback.textContent = "Super! Dobrze! 🌟";
+            feedback.className = 'feedback success';
+            correctCount++;
+        } else {
+            input.classList.add('incorrect');
+            input.classList.remove('correct');
+            let expected = q.type === 'translate' ? q.english : q.expected;
+            feedback.textContent = `Poprawna odpowiedź: "${expected}"`;
+            feedback.className = 'feedback error';
+            incorrectCount++;
+        }
+    });
+
+    const checkBtn = document.getElementById('lesson-check-btn');
+    checkBtn.disabled = true;
+    checkBtn.textContent = "Sprawdzone! 👏";
+
+    const total = lessonCurrentQuestions.length;
+    const scorePct = Math.round((correctCount / total) * 100);
+
+    // Modal podsumowania
+    const celebrationModal = document.getElementById('celebration-modal');
+    document.getElementById('correct-count').textContent = correctCount;
+    document.getElementById('incorrect-count').textContent = incorrectCount;
+    document.getElementById('total-count-denom').textContent = `/${total}`;
+    document.getElementById('total-count-denom-err').textContent = `/${total}`;
+    document.getElementById('score-percentage').textContent = `${scorePct}%`;
+    document.getElementById('final-score-text').textContent = `Zdobyłeś ${correctCount} z ${total} punktów (${scorePct}%).`;
+
+    celebrationModal.classList.remove('hidden');
+});
+
+// ==========================================
+// 3. WIDOK SPRAWDZIANÓW DZIAŁOWYCH (Unit Tests)
+// ==========================================
+
+function renderTestsMenu() {
+    const container = document.getElementById('tests-list-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    unitsData.forEach(unit => {
+        const card = document.createElement('div');
+        card.className = 'test-unit-card';
+        card.id = `test-card-${unit.id}`;
+        card.innerHTML = `
+            <div class="test-unit-info">
+                <span class="unit-number-tag">Unit ${unit.number}</span>
+                <h3>${unit.icon} ${unit.title}</h3>
+                <p class="test-unit-topics">${unit.subtitle}</p>
+            </div>
+            <div class="test-card-actions">
+                <button type="button" class="btn-group-a" data-unit-id="${unit.id}">Grupa A 📄</button>
+                <button type="button" class="btn-group-b" data-unit-id="${unit.id}">Grupa B 📄</button>
+            </div>
+        `;
+
+        card.querySelector('.btn-group-a').addEventListener('click', () => startUnitTest(unit, 'groupA'));
+        card.querySelector('.btn-group-b').addEventListener('click', () => startUnitTest(unit, 'groupB'));
+
+        container.appendChild(card);
+    });
+}
+
+function startUnitTest(unit, groupKey) {
+    currentTestUnit = unit;
+    currentTestGroup = groupKey;
+
+    const testData = unit.tests[groupKey];
+    if (!testData) return;
+
+    viewTestsMenu.classList.add('hidden');
+    viewLesson.classList.add('hidden');
+    viewTestSheet.classList.remove('hidden');
+
+    document.getElementById('test-sheet-group-badge').textContent = groupKey === 'groupA' ? 'GRUPA A' : 'GRUPA B';
+    document.getElementById('test-sheet-title').textContent = `Sprawdzian Unit ${unit.number}: ${unit.title}`;
+    document.getElementById('test-max-points').textContent = `${testData.maxScore} pkt`;
+
+    const tasksContainer = document.getElementById('test-tasks-container');
+    tasksContainer.innerHTML = '';
+
+    testData.tasks.forEach((task, tIdx) => {
+        const taskBox = document.createElement('div');
+        taskBox.className = 'test-task-box';
+
+        const taskHeader = document.createElement('div');
+        taskHeader.className = 'test-task-header';
+        taskHeader.innerHTML = `
+            <span class="test-task-title">Zadanie ${task.taskNumber}</span>
+            <span class="test-task-pts">Maks. ${task.points} pkt</span>
+        `;
+        taskBox.appendChild(taskHeader);
+
+        const instruction = document.createElement('p');
+        instruction.className = 'test-task-instruction';
+        instruction.textContent = task.instruction;
+        taskBox.appendChild(instruction);
+
+        const qList = document.createElement('div');
+        qList.className = 'test-questions-list';
+
+        task.questions.forEach((q, qIdx) => {
+            const row = document.createElement('div');
+            row.className = 'test-question-row';
+
+            if (q.polish) {
+                // Tłumaczenie
+                row.innerHTML = `
+                    <span>${qIdx + 1}. ${q.polish} ➔</span>
+                    <input type="text" class="test-input" id="test-inp-${tIdx}-${qIdx}" placeholder="Wpisz po angielsku..." autocomplete="off" spellcheck="false" style="min-width: 250px;">
+                    <span class="test-item-feedback" id="test-fb-${tIdx}-${qIdx}"></span>
+                `;
+            } else {
+                // Luka
+                row.innerHTML = `
+                    <span>${q.prefix || ''}</span>
+                    <input type="text" class="test-input" id="test-inp-${tIdx}-${qIdx}" autocomplete="off" spellcheck="false">
+                    <span>${q.suffix || ''}</span>
+                    <span class="test-item-feedback" id="test-fb-${tIdx}-${qIdx}"></span>
+                `;
+            }
+
+            qList.appendChild(row);
+        });
+
+        taskBox.appendChild(qList);
+        tasksContainer.appendChild(taskBox);
+    });
+
+    const submitBtn = document.getElementById('submit-test-btn');
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Oddaj sprawdzian do oceny! 📝";
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Przyciski powrotu ze sprawdzianu
+document.querySelectorAll('.back-to-tests-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        viewTestSheet.classList.add('hidden');
+        viewTestsMenu.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});
+
+// Ocena sprawdzianu
+document.getElementById('submit-test-btn').addEventListener('click', () => {
+    if (!currentTestUnit) return;
+    const testData = currentTestUnit.tests[currentTestGroup];
+    if (!testData) return;
+
+    let earnedPoints = 0;
+    const maxPoints = testData.maxScore;
+
+    testData.tasks.forEach((task, tIdx) => {
+        task.questions.forEach((q, qIdx) => {
+            const input = document.getElementById(`test-inp-${tIdx}-${qIdx}`);
+            const feedback = document.getElementById(`test-fb-${tIdx}-${qIdx}`);
+            const userAns = input.value;
+            const expected = q.expected;
+
+            let isCorrect = isAnswerCorrect(userAns, expected);
+
+            input.disabled = true;
+
+            if (isCorrect) {
+                input.classList.add('correct');
+                input.classList.remove('incorrect');
+                feedback.textContent = "✔ (1 pkt)";
+                feedback.className = 'test-item-feedback success';
+                earnedPoints += 1;
+            } else {
+                input.classList.add('incorrect');
+                input.classList.remove('correct');
+                feedback.textContent = `✘ Poprawnie: ${expected}`;
+                feedback.className = 'test-item-feedback error';
+            }
+        });
+    });
+
+    const submitBtn = document.getElementById('submit-test-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sprawdzian Oceniony! 🎓";
+
+    const scorePct = Math.round((earnedPoints / maxPoints) * 100);
+
+    // Wyznaczenie oceny szkolnej (1 - 6)
+    let gradeNum = 1;
+    let gradeWord = "Niedostateczny";
+    let gradeClass = "grade-1";
+    let titleMsg = "Musisz jeszcze poćwiczyć! 💪";
+    let descMsg = "Nie przejmuj się! Przejrzyj błędy, zrób ćwiczenia z działu i spróbuj ponownie.";
+
+    if (scorePct >= 95) {
+        gradeNum = 6;
+        gradeWord = "Celujący";
+        gradeClass = "grade-6";
+        titleMsg = "Mistrzowski Sprawdzian! 🏆";
+        descMsg = "Genialnie! Materiał z tego działu masz opanowany w 100%!";
+    } else if (scorePct >= 85) {
+        gradeNum = 5;
+        gradeWord = "Bardzo dobry";
+        gradeClass = "grade-5";
+        titleMsg = "Świetna robota! 🌟";
+        descMsg = "Wspaniały wynik! Prawie wszystkie odpowiedzi były bezbłędne.";
+    } else if (scorePct >= 70) {
+        gradeNum = 4;
+        gradeWord = "Dobry";
+        gradeClass = "grade-4";
+        titleMsg = "Dobry wynik! 👍";
+        descMsg = "Solidna wiedza z działu! Zwróć uwagę na kilka drobnych potknięć.";
+    } else if (scorePct >= 50) {
+        gradeNum = 3;
+        gradeWord = "Dostateczny";
+        gradeClass = "grade-3";
+        titleMsg = "Zaliczone! 🙂";
+        descMsg = "Podstawy są opanowane, ale warto powtórzyć trudniejsze formy.";
+    } else if (scorePct >= 35) {
+        gradeNum = 2;
+        gradeWord = "Dopuszczający";
+        gradeClass = "grade-2";
+        titleMsg = "Na granicy zaliczenia 📚";
+        descMsg = "Poćwicz słówka i gramatykę w module lekcji, by poprawić wynik!";
+    }
+
+    // Wyświetlenie modalu oceny
+    const modal = document.getElementById('test-grade-modal');
+    const badgeCircle = document.getElementById('grade-badge-circle');
+    badgeCircle.className = `grade-badge-circle ${gradeClass}`;
+    document.getElementById('grade-number').textContent = gradeNum;
+    document.getElementById('grade-word').textContent = gradeWord;
+    document.getElementById('grade-title').textContent = titleMsg;
+    document.getElementById('grade-desc').textContent = descMsg;
+    document.getElementById('test-score-points').textContent = `${earnedPoints} / ${maxPoints} pkt`;
+    document.getElementById('test-score-pct').textContent = `${scorePct}%`;
+    document.getElementById('test-group-label').textContent = `${currentTestGroup === 'groupA' ? 'Grupa A' : 'Grupa B'} (Unit ${currentTestUnit.number})`;
+
+    // Aktualizacja najlepszego wyniku
+    if (scorePct > bestScore) {
+        bestScore = scorePct;
+        localStorage.setItem('english_best_score', bestScore);
+        if (bestScoreDisplay) bestScoreDisplay.textContent = bestScore;
+    }
+
+    modal.classList.remove('hidden');
+});
+
+document.getElementById('review-test-btn').addEventListener('click', () => {
+    document.getElementById('test-grade-modal').classList.add('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.getElementById('close-grade-modal-btn').addEventListener('click', () => {
+    document.getElementById('test-grade-modal').classList.add('hidden');
+    switchMainTab('tests');
+});
+
+// ==========================================
+// 4. TRENING GRAMATYCZNY (ZACHOWANY MODUŁ 300 PYTAŃ)
+// ==========================================
+
+const trainerModTranslate = document.getElementById('trainer-mod-translate');
+const trainerModGap = document.getElementById('trainer-mod-gap');
+const trainerHintBlock = document.getElementById('trainer-hint-block');
+
+trainerModTranslate.addEventListener('click', () => {
+    trainerModule = 'translate';
+    trainerModTranslate.classList.add('active');
+    trainerModGap.classList.remove('active');
+    trainerHintBlock.classList.add('hidden');
+});
+
+trainerModGap.addEventListener('click', () => {
+    trainerModule = 'gap';
+    trainerModGap.classList.add('active');
+    trainerModTranslate.classList.remove('active');
+    trainerHintBlock.classList.remove('hidden');
+});
+
+document.querySelectorAll('[data-trainer-hint]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-trainer-hint]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        trainerHintMode = btn.dataset.trainerHint;
+    });
+});
+
+document.querySelectorAll('#trainer-count-selector .count-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#trainer-count-selector .count-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        trainerQuestionCount = parseInt(btn.dataset.count, 10);
+    });
+});
+
+document.querySelectorAll('.topic-btn').forEach(btn => {
+    btn.addEventListener('click', () => startTrainer(btn.dataset.topic));
+});
+
+const trainerExerciseSubview = document.getElementById('trainer-exercise-subview');
+const trainerBackBtn = document.getElementById('trainer-back-btn');
+const trainerCheckAllBtn = document.getElementById('trainer-check-all-btn');
+
+trainerBackBtn.addEventListener('click', () => {
+    trainerExerciseSubview.classList.add('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+function startTrainer(topic) {
+    trainerTopic = topic;
+    trainerExerciseSubview.classList.remove('hidden');
+
+    document.getElementById('trainer-module-badge').textContent = trainerModule === 'translate' 
+        ? '📝 Tłumaczenia zdań' 
+        : (trainerHintMode === 'with' ? '🧩 Zadania z luką (z podpowiedziami)' : '🧩 Zadania z luką (bez podpowiedzi)');
+
+    let topicName = 'Wszystko naraz!';
+    if (topic === 'tobe') topicName = 'Czasownik "to be"';
+    if (topic === 'tohave') topicName = 'Czasownik "have got"';
+    if (topic === 'can') topicName = 'Czasownik "can"';
+    document.getElementById('trainer-topic-title').textContent = topicName;
+
+    loadTrainerQuiz();
+}
+
+function loadTrainerQuiz() {
+    trainerCheckAllBtn.disabled = false;
+    trainerCheckAllBtn.textContent = "Sprawdź odpowiedzi! 🚀";
+
+    let pool = [];
+    if (trainerTopic === 'mix') {
+        pool = [...db.tobe, ...db.tohave, ...db.can];
+    } else {
+        pool = db[trainerTopic];
+    }
+
+    const filteredPool = pool.filter(item => item.mode === trainerModule);
+    const shuffled = shuffle(filteredPool);
+    trainerQuestions = shuffled.slice(0, Math.min(trainerQuestionCount, shuffled.length));
+
+    document.getElementById('trainer-count-badge').textContent = `${trainerQuestions.length} pytań`;
+
+    const questionsList = document.getElementById('trainer-questions-list');
+    questionsList.innerHTML = '';
+
+    trainerQuestions.forEach((q, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'question-item card';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'exercise-type';
+        headerDiv.textContent = `Zadanie ${index + 1} / ${trainerQuestions.length} • ${q.type ? q.type.toUpperCase() : ''}`;
+        itemDiv.appendChild(headerDiv);
+
+        if (q.mode === 'translate') {
+            const qText = document.createElement('div');
+            qText.className = 'question';
+            qText.textContent = q.polish;
+            itemDiv.appendChild(qText);
+
+            const inputArea = document.createElement('div');
+            inputArea.className = 'input-area';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `trainer-input-${index}`;
+            input.placeholder = "Napisz po angielsku...";
+            input.autocomplete = "off";
+            input.spellcheck = false;
+
+            inputArea.appendChild(input);
+            itemDiv.appendChild(inputArea);
+        } else {
+            const inputArea = document.createElement('div');
+            inputArea.className = 'input-area gap-fill-area';
+
+            if (q.prefix) {
+                const prefix = document.createElement('span');
+                prefix.className = 'gap-text';
+                prefix.textContent = q.prefix;
+                inputArea.appendChild(prefix);
+            }
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `trainer-input-${index}`;
+            input.autocomplete = "off";
+            input.spellcheck = false;
+            input.placeholder = "...";
+            inputArea.appendChild(input);
+
+            if (q.suffix) {
+                const match = q.suffix.match(/^(.*?)(\s*\([^)]+\))\s*$/);
+                let mainText = q.suffix;
+                let hintText = "";
+                if (match) {
+                    mainText = match[1];
+                    hintText = match[2].trim();
+                }
+
+                const suffix = document.createElement('span');
+                suffix.className = 'gap-text';
+                suffix.textContent = mainText;
+                inputArea.appendChild(suffix);
+
+                if (hintText) {
+                    if (trainerHintMode === 'with') {
+                        const hintSpan = document.createElement('span');
+                        hintSpan.className = 'hint-pill';
+                        hintSpan.textContent = ` ${hintText}`;
+                        inputArea.appendChild(hintSpan);
+                    } else {
+                        const revealBtn = document.createElement('button');
+                        revealBtn.type = 'button';
+                        revealBtn.className = 'reveal-hint-btn';
+                        revealBtn.textContent = '💡 Podpowiedź';
+                        revealBtn.addEventListener('click', () => {
+                            revealBtn.replaceWith(Object.assign(document.createElement('span'), {
+                                className: 'revealed-hint-text',
+                                textContent: hintText
+                            }));
+                        });
+                        inputArea.appendChild(revealBtn);
+                    }
+                }
+            }
+
+            itemDiv.appendChild(inputArea);
+        }
+
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+        feedback.id = `trainer-feedback-${index}`;
+        itemDiv.appendChild(feedback);
+
+        questionsList.appendChild(itemDiv);
+    });
+
+    trainerExerciseSubview.scrollIntoView({ behavior: 'smooth' });
+}
+
+trainerCheckAllBtn.addEventListener('click', () => {
+    let correctCount = 0;
+    let incorrectCount = 0;
+
+    trainerQuestions.forEach((q, index) => {
+        const input = document.getElementById(`trainer-input-${index}`);
+        const feedback = document.getElementById(`trainer-feedback-${index}`);
+        const userAns = input.value;
+
+        let isCorrect = false;
+        if (q.mode === 'translate') {
+            isCorrect = isAnswerCorrect(userAns, q.english);
+        } else {
+            isCorrect = isAnswerCorrect(userAns, q.expected);
+        }
+
+        input.disabled = true;
+
+        if (isCorrect) {
+            input.classList.add('correct');
+            input.classList.remove('incorrect');
+            feedback.textContent = "Super! Dobrze! 🌟";
+            feedback.className = 'feedback success';
+            correctCount++;
+        } else {
+            input.classList.add('incorrect');
+            input.classList.remove('correct');
+            let expected = q.mode === 'translate' ? q.english : q.expected;
+            feedback.textContent = `Poprawna odpowiedź: "${expected}"`;
+            feedback.className = 'feedback error';
+            incorrectCount++;
+        }
+    });
+
+    trainerCheckAllBtn.disabled = true;
+    trainerCheckAllBtn.textContent = "Sprawdzone! 👏";
+
+    const total = trainerQuestions.length;
+    const scorePct = Math.round((correctCount / total) * 100);
+
+    if (scorePct > bestScore) {
+        bestScore = scorePct;
+        localStorage.setItem('english_best_score', bestScore);
+        if (bestScoreDisplay) bestScoreDisplay.textContent = bestScore;
+    }
+
+    const celebrationModal = document.getElementById('celebration-modal');
+    document.getElementById('correct-count').textContent = correctCount;
+    document.getElementById('incorrect-count').textContent = incorrectCount;
+    document.getElementById('total-count-denom').textContent = `/${total}`;
+    document.getElementById('total-count-denom-err').textContent = `/${total}`;
+    document.getElementById('score-percentage').textContent = `${scorePct}%`;
+    document.getElementById('final-score-text').textContent = `Zdobyłeś ${correctCount} z ${total} punktów (${scorePct}%).`;
+
+    celebrationModal.classList.remove('hidden');
+});
+
+// Przyciski modalu ćwiczeń
+document.getElementById('modal-close-btn').addEventListener('click', () => {
+    document.getElementById('celebration-modal').classList.add('hidden');
+});
+
+document.getElementById('modal-retry-btn').addEventListener('click', () => {
+    document.getElementById('celebration-modal').classList.add('hidden');
+    if (!viewLesson.classList.contains('hidden')) {
+        loadLessonQuestions();
+    } else if (!trainerExerciseSubview.classList.contains('hidden')) {
+        loadTrainerQuiz();
+    }
+});
+
+// ==========================================
+// 5. NARZĘDZIA WALIDACJI I SPRAWDZANIA TEKSTU
+// ==========================================
+
+function cleanString(str) {
+    return (str || '').toLowerCase()
+                      .replace(/[.,!?]/g, '')
+                      .replace(/\s+/g, ' ')
+                      .trim();
+}
+
+function isAnswerCorrect(userAns, correctAns) {
+    let user = cleanString(userAns);
+    let correct = cleanString(correctAns);
+
+    if (user === correct) return true;
+
+    // Zamienniki form skróconych i pełnych
+    const variations = {
+        "i am not": ["im not", "i'm not"],
+        "you are not": ["you arent", "you aren't", "you're not", "youre not"],
+        "he is not": ["he isnt", "he isn't", "he's not", "hes not"],
+        "she is not": ["she isnt", "she isn't", "she's not", "shes not"],
+        "it is not": ["it isnt", "it isn't", "it's not", "its not"],
+        "we are not": ["we arent", "we aren't", "we're not", "were not"],
+        "they are not": ["they arent", "they aren't", "they're not", "theyre not"],
+
+        "i have not got": ["i havent got", "i haven't got", "ive not got", "i've not got"],
+        "you have not got": ["you havent got", "you haven't got"],
+        "he has not got": ["he hasnt got", "he hasn't got"],
+        "she has not got": ["she hasnt got", "she hasn't got"],
+        "it has not got": ["it hasnt got", "it hasn't got"],
+        "we have not got": ["we havent got", "we haven't got"],
+        "they have not got": ["they havent got", "they haven't got"],
+
+        "have not got": ["haven't got", "havent got"],
+        "has not got": ["hasn't got", "hasnt got"],
+        "are not": ["aren't", "arent"],
+        "is not": ["isn't", "isnt"],
+        "am not": ["m not", "'m not"],
+
+        "do not": ["don't", "dont"],
+        "does not": ["doesn't", "doesnt"],
+        "cannot": ["can not", "cant", "can't"]
+    };
+
+    for (let key in variations) {
+        if (correct.includes(key)) {
+            for (let v of variations[key]) {
+                let altCorrect = correct.replace(key, v);
+                if (user === altCorrect) return true;
+            }
+        }
+    }
+
+    const shortForms = [
+        { full: "i am", short: "i'm" }, { full: "i am", short: "im" },
+        { full: "you are", short: "you're" }, { full: "you are", short: "youre" },
+        { full: "he is", short: "he's" }, { full: "he is", short: "hes" },
+        { full: "she is", short: "she's" }, { full: "she is", short: "shes" },
+        { full: "it is", short: "it's" }, { full: "it is", short: "its" },
+        { full: "we are", short: "we're" }, { full: "we are", short: "were" },
+        { full: "they are", short: "they're" }, { full: "they are", short: "theyre" },
+        { full: "i have got", short: "i've got" }, { full: "i have got", short: "ive got" }
+    ];
+
+    for (let f of shortForms) {
+        if (correct.includes(f.full)) {
+            let alt = correct.replace(f.full, f.short);
+            if (user === alt) return true;
+        }
+    }
+
+    // Sprawdzenie pojedynczych form
+    if (correct === "cannot" && (user === "can't" || user === "cant" || user === "can not")) return true;
+    if (correct === "can't" && (user === "cannot" || user === "cant")) return true;
+    if (correct === "don't" && (user === "do not" || user === "dont")) return true;
+    if (correct === "doesn't" && (user === "does not" || user === "doesnt")) return true;
+
+    return false;
 }
 
 function shuffle(array) {
@@ -497,323 +1269,5 @@ function shuffle(array) {
     return copy;
 }
 
-function loadQuiz() {
-    checkAllBtn.disabled = false;
-    checkAllBtn.textContent = "Sprawdź odpowiedzi! 🚀";
-    
-    let pool = [];
-    if (currentTopic === 'mix') {
-        pool = [...db.tobe, ...db.tohave, ...db.can];
-    } else {
-        pool = db[currentTopic];
-    }
-    
-    // Filtrujemy dokładnie po wybranym module (translate albo gap)
-    const filteredPool = pool.filter(item => item.mode === selectedModule);
-    
-    // Losujemy i bierzemy dokładnie zadeklarowaną liczbę zadań (np. 10, 20, 30, 40, 50)
-    const shuffled = shuffle(filteredPool);
-    const targetCount = Math.min(selectedQuestionCount, shuffled.length);
-    currentQuestions = shuffled.slice(0, targetCount);
-    
-    quizCountBadge.textContent = `${currentQuestions.length} pytań`;
-    
-    renderQuestions();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function renderQuestions() {
-    questionsList.innerHTML = '';
-    
-    currentQuestions.forEach((q, index) => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'question-item card';
-        
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'exercise-type';
-        const typeLabel = q.type ? q.type.toUpperCase() : '';
-        headerDiv.textContent = `Zadanie ${index + 1} / ${currentQuestions.length} • ${typeLabel}`;
-        itemDiv.appendChild(headerDiv);
-        
-        if (q.mode === 'translate') {
-            const qText = document.createElement('div');
-            qText.className = 'question';
-            qText.textContent = q.polish;
-            itemDiv.appendChild(qText);
-            
-            const inputArea = document.createElement('div');
-            inputArea.className = 'input-area';
-            
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = `input-${index}`;
-            input.placeholder = "Napisz po angielsku...";
-            input.autocomplete = "off";
-            input.spellcheck = false;
-            
-            // Obsługa Enter: przejście do następnego zadania
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    const nextInput = document.getElementById(`input-${index + 1}`);
-                    if (nextInput) {
-                        nextInput.focus();
-                    } else {
-                        checkAllBtn.focus();
-                    }
-                }
-            });
-            
-            inputArea.appendChild(input);
-            itemDiv.appendChild(inputArea);
-            
-        } else if (q.mode === 'gap') {
-            const inputArea = document.createElement('div');
-            inputArea.className = 'input-area gap-fill-area';
-            
-            if (q.prefix) {
-                const prefix = document.createElement('span');
-                prefix.className = 'gap-text';
-                prefix.textContent = q.prefix;
-                inputArea.appendChild(prefix);
-            }
-            
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = `input-${index}`;
-            input.autocomplete = "off";
-            input.spellcheck = false;
-            input.placeholder = "...";
-            
-            // Obsługa Enter: przejście do następnego zadania
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    const nextInput = document.getElementById(`input-${index + 1}`);
-                    if (nextInput) {
-                        nextInput.focus();
-                    } else {
-                        checkAllBtn.focus();
-                    }
-                }
-            });
-            
-            inputArea.appendChild(input);
-            
-            if (q.suffix) {
-                // Rozdzielamy tekst zdania od podpowiedzi w nawiasie (...)
-                const match = q.suffix.match(/^(.*?)(\s*\([^)]+\))\s*$/);
-                let mainText = q.suffix;
-                let hintText = "";
-                
-                if (match) {
-                    mainText = match[1];
-                    hintText = match[2].trim();
-                }
-                
-                const suffix = document.createElement('span');
-                suffix.className = 'gap-text';
-                suffix.textContent = mainText;
-                inputArea.appendChild(suffix);
-                
-                if (hintText) {
-                    if (gapHintMode === 'with') {
-                        const hintSpan = document.createElement('span');
-                        hintSpan.className = 'hint-pill';
-                        hintSpan.textContent = ` ${hintText}`;
-                        inputArea.appendChild(hintSpan);
-                    } else {
-                        // Tryb bez podpowiedzi - dyskretny przycisk ratunkowy
-                        const revealBtn = document.createElement('button');
-                        revealBtn.type = 'button';
-                        revealBtn.className = 'reveal-hint-btn';
-                        revealBtn.textContent = '💡 Podpowiedź';
-                        revealBtn.title = 'Kliknij jeśli potrzebujesz podpowiedzi';
-                        revealBtn.addEventListener('click', () => {
-                            revealBtn.replaceWith(Object.assign(document.createElement('span'), {
-                                className: 'revealed-hint-text',
-                                textContent: hintText
-                            }));
-                        });
-                        inputArea.appendChild(revealBtn);
-                    }
-                }
-            }
-            
-            itemDiv.appendChild(inputArea);
-        }
-        
-        const feedback = document.createElement('div');
-        feedback.className = 'feedback';
-        feedback.id = `feedback-${index}`;
-        itemDiv.appendChild(feedback);
-        
-        questionsList.appendChild(itemDiv);
-    });
-}
-
-function cleanString(str) {
-    return (str || '').toLowerCase()
-                      .replace(/[.,!?]/g, '')
-                      .replace(/\s+/g, ' ')
-                      .trim();
-}
-
-function isAnswerCorrect(userAns, correctAns) {
-    let user = cleanString(userAns);
-    let correct = cleanString(correctAns);
-    
-    if (user === correct) return true;
-    
-    // Słownik zamienników form skróconych i pełnych
-    const variations = {
-        "i am not": ["im not", "i'm not"],
-        "you are not": ["you arent", "you aren't", "you're not", "youre not"],
-        "he is not": ["he isnt", "he isn't", "he's not", "hes not"],
-        "she is not": ["she isnt", "she isn't", "she's not", "shes not"],
-        "it is not": ["it isnt", "it isn't", "it's not", "its not"],
-        "we are not": ["we arent", "we aren't", "we're not", "were not"],
-        "they are not": ["they arent", "they aren't", "they're not", "theyre not"],
-        
-        "i have not got": ["i havent got", "i haven't got", "ive not got", "i've not got"],
-        "you have not got": ["you havent got", "you haven't got"],
-        "he has not got": ["he hasnt got", "he hasn't got"],
-        "she has not got": ["she hasnt got", "she hasn't got"],
-        "it has not got": ["it hasnt got", "it hasn't got"],
-        "we have not got": ["we havent got", "we haven't got"],
-        "they have not got": ["they havent got", "they haven't got"],
-        
-        "cannot": ["can not", "cant", "can't"]
-    };
-    
-    for (let key in variations) {
-        if (correct.includes(key)) {
-            for (let v of variations[key]) {
-                let altCorrect = correct.replace(key, v);
-                if (user === altCorrect) return true;
-            }
-        }
-    }
-    
-    const shortForms = [
-        { full: "i am", short: "i'm" }, { full: "i am", short: "im" },
-        { full: "you are", short: "you're" }, { full: "you are", short: "youre" },
-        { full: "he is", short: "he's" }, { full: "he is", short: "hes" },
-        { full: "she is", short: "she's" }, { full: "she is", short: "shes" },
-        { full: "it is", short: "it's" }, { full: "it is", short: "its" },
-        { full: "we are", short: "we're" }, { full: "we are", short: "were" },
-        { full: "they are", short: "theyre" }, { full: "they are", short: "they're" },
-        { full: "i have got", short: "i've got" }, { full: "i have got", short: "ive got" }
-    ];
-    
-    for (let f of shortForms) {
-        if (correct.includes(f.full)) {
-            let alt = correct.replace(f.full, f.short);
-            if (user === alt) return true;
-        }
-    }
-
-    return false;
-}
-
-function checkAnswers() {
-    let correctCount = 0;
-    let incorrectCount = 0;
-    
-    currentQuestions.forEach((q, index) => {
-        const input = document.getElementById(`input-${index}`);
-        const feedback = document.getElementById(`feedback-${index}`);
-        const userAns = input.value;
-        
-        let isCorrect = false;
-        
-        if (q.mode === 'translate') {
-            isCorrect = isAnswerCorrect(userAns, q.english);
-        } else {
-            // Logika luk
-            let cleanUser = cleanString(userAns);
-            let cleanExpected = cleanString(q.expected);
-            
-            if (cleanUser === cleanExpected) {
-                isCorrect = true;
-            } else if (cleanExpected === "cannot" && (cleanUser === "cant" || cleanUser === "can't" || cleanUser === "can not")) {
-                isCorrect = true;
-            } else if (cleanExpected === "have not got" && (cleanUser === "havent got" || cleanUser === "haven't got" || cleanUser === "ve not got" || cleanUser === "'ve not got")) {
-                isCorrect = true;
-            } else if (cleanExpected === "has not got" && (cleanUser === "hasnt got" || cleanUser === "hasn't got" || cleanUser === "s not got" || cleanUser === "'s not got")) {
-                isCorrect = true;
-            } else if (cleanExpected === "are not" && (cleanUser === "arent" || cleanUser === "aren't" || cleanUser === "re not" || cleanUser === "'re not")) {
-                isCorrect = true;
-            } else if (cleanExpected === "is not" && (cleanUser === "isnt" || cleanUser === "isn't" || cleanUser === "s not" || cleanUser === "'s not")) {
-                isCorrect = true;
-            } else if (cleanExpected === "am not" && (cleanUser === "m not" || cleanUser === "'m not" || cleanUser === "im not" || cleanUser === "i'm not")) {
-                isCorrect = true;
-            } else if (cleanExpected === "have got" && (cleanUser === "ve got" || cleanUser === "'ve got")) {
-                isCorrect = true;
-            } else if (cleanExpected === "has got" && (cleanUser === "s got" || cleanUser === "'s got")) {
-                isCorrect = true;
-            } else if (cleanExpected === "am" && (cleanUser === "m" || cleanUser === "'m")) {
-                isCorrect = true;
-            } else if (cleanExpected === "are" && (cleanUser === "re" || cleanUser === "'re")) {
-                isCorrect = true;
-            } else if (cleanExpected === "is" && (cleanUser === "s" || cleanUser === "'s")) {
-                isCorrect = true;
-            }
-        }
-        
-        input.disabled = true;
-        
-        if (isCorrect) {
-            input.classList.add('correct');
-            input.classList.remove('incorrect');
-            feedback.textContent = "Super! Dobrze! 🌟";
-            feedback.className = 'feedback success';
-            correctCount++;
-        } else {
-            input.classList.add('incorrect');
-            input.classList.remove('correct');
-            let expectedText = q.mode === 'translate' ? q.english : q.expected;
-            feedback.textContent = `Poprawna odpowiedź: "${expectedText}"`;
-            feedback.className = 'feedback error';
-            incorrectCount++;
-        }
-    });
-    
-    checkAllBtn.disabled = true;
-    checkAllBtn.textContent = "Sprawdzone! 👏";
-    
-    const total = currentQuestions.length;
-    const scorePct = Math.round((correctCount / total) * 100);
-    
-    // Aktualizacja najlepszego wyniku w gwiazdkach
-    if (scorePct > bestScore) {
-        bestScore = scorePct;
-        localStorage.setItem('english_best_score', bestScore);
-        bestScoreDisplay.textContent = bestScore;
-    }
-    
-    // Wypełnienie okna podsumowania
-    correctCountElem.textContent = correctCount;
-    incorrectCountElem.textContent = incorrectCount;
-    totalCountDenom.textContent = `/${total}`;
-    totalCountDenomErr.textContent = `/${total}`;
-    scorePercentageElem.textContent = `${scorePct}%`;
-    
-    if (correctCount === total) {
-        modalTitle.textContent = "Mistrz Angielskiego! 🏆";
-        modalSubtitle.textContent = `Genialnie! Rozwiązałeś bezbłędnie wszystkie ${total} zadań!`;
-        finalScoreText.textContent = `Gratulacje! 100% poprawnych odpowiedzi (${correctCount}/${total})!`;
-    } else if (scorePct >= 80) {
-        modalTitle.textContent = "Bardzo dobra robota! 🌟";
-        modalSubtitle.textContent = "Świetny wynik! Prawie wszystkie odpowiedzi były poprawne.";
-        finalScoreText.textContent = `Zdobyłeś ${correctCount} poprawnych odpowiedzi i tylko ${incorrectCount} ${incorrectCount === 1 ? 'błąd' : 'błędy'}.`;
-    } else if (scorePct >= 50) {
-        modalTitle.textContent = "Dobra robota! 👍";
-        modalSubtitle.textContent = "Idzie Ci coraz lepiej! Zwróć uwagę na poprawione odpowiedzi.";
-        finalScoreText.textContent = `Masz ${correctCount} dobrze i ${incorrectCount} do poprawy. Trening czyni mistrza!`;
-    } else {
-        modalTitle.textContent = "Głowa do góry! 💪";
-        modalSubtitle.textContent = "Każdy błąd to krok do nauki. Spróbuj jeszcze raz!";
-        finalScoreText.textContent = `Masz ${correctCount} dobrze i ${incorrectCount} źle. Przejrzyj błędy i poćwicz ponownie!`;
-    }
-    
-    celebrationModal.classList.remove('hidden');
-}
+// Inicjalizacja startowa
+renderUnitsList();
